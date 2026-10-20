@@ -1,0 +1,6 @@
+__pycache__/
+references/
+.env
+node_modules/
+dist/
+.browserpilot/

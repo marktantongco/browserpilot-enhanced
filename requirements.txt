@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+httpx
+patchright
+playwright
+openai
+redis
+python-dotenv

@@ -1,0 +1,20 @@
+version: '3.8'
+services:
+  searxng:
+    image: searxng/searxng:latest
+    ports: ["8080:8080"]
+  camofox:
+    image: ghcr.io/jo-inc/camofox:latest
+    ports: ["9377:9377"]
+    environment: [CAMOFOX_API_KEY=dev]
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+  browserpilot:
+    build: .
+    ports: ["8000:8000"]
+    depends_on: [searxng, camofox, redis]
+    environment:
+      - SEARXNG_URL=http://searxng:8080
+      - CAMOFOX_URL=http://camofox:9377
+      - REDIS_URL=redis://redis:6379

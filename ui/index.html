@@ -1,0 +1,81 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>BrowserPilot Enhanced - Generative Dashboard</title>
+<style>
+body{font-family:Inter,system-ui;background:#0a0a0b;color:#e5e5e5;margin:0}
+.header{padding:20px;border-bottom:1px solid #222;display:flex;justify-content:space-between}
+.card{background:#141415;border:1px solid #222;border-radius:12px;padding:16px;margin:12px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.badge{background:#1f1f23;padding:4px 8px;border-radius:6px;font-size:12px}
+.live{height:300px;overflow-y:auto;background:#000;font-family:monospace;font-size:12px;padding:8px}
+button{background:#fff;color:#000;border:0;padding:8px 14px;border-radius:8px;cursor:pointer;font-weight:600}
+input{background:#1a1a1d;border:1px solid #333;color:#fff;padding:10px;border-radius:8px;width:70%}
+</style>
+</head>
+<body>
+<div class="header">
+  <div><b>BrowserPilot Enhanced v2.0</b> <span class="badge">105/105 Pixelscan</span> <span class="badge">Ghost Mode</span> <span class="badge">Jev 100ms</span></div>
+  <div>CashPilot Fleet • SearXNG • Camofox • CloakBrowser</div>
+</div>
+<div class="grid">
+  <div class="card">
+    <h3>Natural Language Scrape</h3>
+    <input id="goal" placeholder="Go to Amazon and extract all laptops under $1000 as JSON"/>
+    <button onclick="scrape()">Run</button>
+    <pre id="out" style="white-space:pre-wrap;margin-top:12px"></pre>
+  </div>
+  <div class="card">
+    <h3>Live Browser Stream :8000 ws/live</h3>
+    <div id="live" class="live"></div>
+  </div>
+  <div class="card">
+    <h3>Bulk Fleet (CashPilot pattern)</h3>
+    <input id="bulkUrls" value="https://nike.com,https://wayfair.com,https://footlocker.com"/>
+    <input id="bulkPrompt" value="Extract product data"/>
+    <button onclick="bulk()">Bulk Scrape 10 workers</button>
+    <pre id="bulkOut"></pre>
+  </div>
+  <div class="card">
+    <h3>3-Tier Search (Johell1NS)</h3>
+    <input id="q" value="largest llm benchmark 2026"/>
+    <button onclick="search()">SearXNG Search</button>
+    <pre id="searchOut"></pre>
+  </div>
+</div>
+<script>
+async function scrape(){
+  const goal=document.getElementById('goal').value;
+  const res=await fetch('/scrape/structured',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({goal, format:'json', stealth_level:'ghost'})});
+  const j=await res.json();
+  document.getElementById('out').textContent=JSON.stringify(j,null,2);
+}
+async function search(){
+  const q=document.getElementById('q').value;
+  const res=await fetch('/search',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query:q})});
+  const j=await res.json();
+  document.getElementById('searchOut').textContent=JSON.stringify(j,null,2);
+}
+async function bulk(){
+  const urls=document.getElementById('bulkUrls').value.split(',');
+  const prompt=document.getElementById('bulkPrompt').value;
+  const res=await fetch('/bulk',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({urls,prompt,max_workers:10})});
+  const j=await res.json();
+  document.getElementById('bulkOut').textContent=JSON.stringify(j,null,2);
+  setInterval(async()=>{
+    const s=await fetch('/bulk/'+j.job_id); const sj=await s.json();
+    document.getElementById('bulkOut').textContent=JSON.stringify(sj,null,2);
+  },1000);
+}
+const liveEl=document.getElementById('live');
+const ws=new WebSocket((location.protocol==='https:'?'wss:':'ws:')+'//'+location.host+'/ws/live');
+ws.onmessage=e=>{
+  const d=JSON.parse(e.data);
+  liveEl.textContent+=`\n[${new Date().toLocaleTimeString()}] ${d.type}: ${JSON.stringify(d.data).slice(0,120)}`;
+  liveEl.scrollTop=liveEl.scrollHeight;
+};
+</script>
+</body>
+</html>
